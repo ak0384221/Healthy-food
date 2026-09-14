@@ -41,7 +41,8 @@ export default function HealthyFoods() {
             handleOnKeyDown(evt);
           }}
           type="text"
-          className="border text-white mb-4 h-10 outline-0 pl-3 w-55"
+          placeholder="what do you want ?"
+          className="border text-white mb-4 h-10 outline-0 pl-3 w-55 rounded-2xl"
         />
 
         {FoodItems.length === 0 && <ErrorMsg />}
