@@ -1,37 +1,66 @@
-name: my first workflow
+name: CI/CD pipeline
+
 on:
   push:
-    branches: [main, staging]
+    branches: [staging, main]
+
 jobs:
-  say-hello:
+  verify-and-build:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "hello"
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: get the code
+        uses: actions/checkout@v4
+
+      - name: setup environment
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
-      - run: npm run lint
 
-  test:
-    needs: lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: install deps
+        run: npm ci
+
+      - name: linting check
+        run: npm run lint
+
+      - name: test
+        run: npm test
+
+      - name: build
+        run: npm run build
+
+      - name: upload build artifact
+        uses: actions/upload-artifact@v4
         with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      - run: npm run build
+          name: build-output
+          path: dist/
+          retention-days: 1
 
-  deploy:
-    needs: test
+  docker-build-push:
+    needs: verify-and-build
     runs-on: ubuntu-latest
     steps:
-      - run: echo "deploy later"
+      - name: get the code
+        uses: actions/checkout@v4
+
+      - name: get the artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: dist/
+
+      - name: debug the artifacts content
+        run: ls -la dist/
+
+      - name: login to docker hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{secrets.DOCKERHUB_USERNAME}}
+          password: ${{secrets.DOCKERHUB_TOKEN}}
+
+      - name: build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ak0384221/${{github.event.repository.name}}
