@@ -63,4 +63,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ak0384221/${{github.event.repository.name}}
+          tags: ak0384221/healthy-food
